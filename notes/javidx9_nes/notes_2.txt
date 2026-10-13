@@ -1,0 +1,103 @@
+6502 CPU
+- When emulating CPU, need to determine level of abstraction you're going to design at
+    - We're probably not interested in electrical behavior of CPU
+
+- Can write to an address
+- Can read and write data
+- R/W signal
+
+
+  Clock
+    |
+    ---> CPU ---> Address (16-bit, 8 bits at a time)
+             <--> Data
+             ---> R/W
+
+
+CPU needs to be able to communicate with outside world to be useful.
+    - Can output an address, read and write data, indicate if its reading or writing
+    - CPU needs a clock to do anything at all.
+        - Clocks force a CPU to change state.
+
+
+CPU is connected to bus. Bus is nothing more than a series of wires.
+
+When CPU writes address to bus, it expects device handling this address to either write data to bus,
+or read data CPU wrote to bus. The R/W signal governs this direction.
+
+Bus addressable range is 16 bits.
+
+Each device attached to bus has its own addressable range.
+
+
+When writing this emulator, we will assume all devices connected to bus other than CPU will be
+abstracted away as RAM with an addressable range 0x0000 - 0xFFFF (64KB) and can both, written to and read from
+
+RAM contains program variables and program itself (von Neumann architecture)
+
+
+
+
+CPU, BUS, RAM (or various connected devices)
+
+
+
+
+Registers
+A - Accumulator [8 bits]
+X - Register [8 bits]
+Y - Register [8 bits]
+stkp - Stack Pointer (Points to address in memory)
+pc - Program Counter (Program bytes)
+status - Status Register (Z? C? I --> each a single bit)
+
+
+It would be ideal if:
+
+clock ---> CPU --> PC
+instruction ----> CPU ----> Output
+
+In reality:
+
+several clock ---> CPU --> PC
+(1,2,3 byte) instruction  ----> CPU ----> Output
+
+So each instruction has a
+    - size
+    - duration
+
+
+Example Instruction:
+    - LDA $41
+    (One byte for instruction, one byte for data ---> 2 bytes)
+
+    - LDA $0105
+    (One byte for instruction, for 2 byte for datas ---> 3 bytes)
+
+    - CLC
+    (One byte for instruction ---> 1 byte)
+
+
+Instruction ---> Function
+                 Address Mode (identify how to address data)
+                 Cycles
+
+
+First byte identifies instruction. Can use a data sheet, a 2D array of opcodes to identify which instruction to run.
+    - First 4 bits of byte give column
+    - Last 4 bits of byte give row
+Each entry in data sheet defines:
+    - Instruction
+    - Number of bytes for instruction
+    - Number of cycles for instructions
+    - Addressing mode
+
+
+
+1) Read byte at PC
+2) Opcode[byte] --> Addressing mode, cycles
+3) Read 0,1,2 more bytes
+4) Execute instruction
+5) Wait, Count clock cycles until instruction is complete
+
+
