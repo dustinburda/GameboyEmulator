@@ -1,0 +1,8 @@
+//
+// Created by Dustin on 10/13/26.
+//
+
+#ifndef GAMEBOYEMULATOR_OPCODES_H
+#define GAMEBOYEMULATOR_OPCODES_H
+
+#endif //GAMEBOYEMULATOR_OPCODES_H
