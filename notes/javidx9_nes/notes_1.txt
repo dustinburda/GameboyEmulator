@@ -1,0 +1,209 @@
+Bitwise Basics
+
+
+Represent Numbers
+
+65 = 0b'01000001
+         ^     ^
+         |     |_________
+         |               |
+        7th bit       0th bit
+
+65 = 6 * 10^1 + 5 * 10^0
+65 = 1 * 2^6 + 1 * 2^0
+
+
+Emulation is about representing the hardware, hardware is composed of more fundamental components
+like transistors, flip-flops, buses, wires. There is no fundamental hardware component that
+understands decimals, instead they use binary - a series of ON and OFF switches.
+
+While binary is great for computers, it's terrible for humans where numbers like 65 get large
+very quickly.
+
+Consider 24990 in binary: 0110000110011110 (an 8 bit number is insufficient)
+Difficult to communicate 0110000110011110 to another human being.
+
+Hexadecimal lies halfway between being able to see what bits are active and also gives appreciable
+scale of the numbers value.
+
+0110 0001 1001 1110
+
+Group every 4 bits (which range from 0-15) and assign them a number
+0 1 2 3 4 5 6 7 8 9 A B C D E F
+
+
+0110 0001 1001 1110
+6    1    9    E
+
+
+So
+
+Decimal: 24990
+Hexadecimal: 691E
+Binary: 0110000110011110
+
+
+In C++:
+Decimal: 24990
+Hexadecimal literals are written: 0x691E
+Binary literals are written: 0b0110000110011110
+
+
+
+Bitwise Operations:
+    char - single byte value, 0-255 range
+
+    Hardware looks at chars differently, as a series of bits
+
+    Consider
+    0110011
+
+    We may use sub-bits to represent some value
+
+    _____________ N/A
+    |
+    V
+    0 1 1 01 110
+      ^ ^  ^  ^
+      | |  |  |
+      | |  |  |______ Some value 0-7
+      | |  |
+      | |  |_________ Some state 4
+      | |
+      | |_____________
+      |_______________ Switches
+
+
+Important to understand how to extract relevant parts of eight bit/n-bit number
+and interpret what they mean.
+
+Conversely, also important to understand how to construct n-bit number for hardware
+out of information stored in other data types.
+
+
+To EXTRACT bottom three bits:
+- Use mask: 00000111, & operation, and shift right (>>) 0 bits
+
+To EXTRACT middle two bits:
+- Use mask: 00011000, & operation, and shift right (>>) three bits
+
+
+
+To SET middle bit:
+- Use mask: 00010000, | operation
+
+To CLEAR middle bit:
+- Negate mask, ~(00010000), | operation
+
+
+To TOGGLE middle bit:
+- XOR mask, 00010000
+
+
+& ---> EXTRACT
+| ---> SET, CLEAR
+^ ---> TOGGLE
+
+
+
+& - AND
+| - OR
+~ - NOT
+^ - XOR
+<< - SHIFT LEFT
+>> - SHIFT RIGHT
+
+
+Sometimes its more convenient to create a structure that represents a binary word that's already broken apart
+into convenient properties. C++ provides this facility with BIT FIELDS
+
+
+
+Bitfields
+
+struct {
+    char unused: 1;
+    char sw1: 1;
+    char sw2: 1;
+    char state : 2;
+    char value : 3;
+}
+
+
+A.value = 4;
+A.state = 1;
+A.sw2 = 0;
+
+
+union {
+    struct {
+        char unused: 1;
+        char sw1: 1;
+        char sw2: 1;
+        char state : 2;
+        char value : 3;
+    }
+    char reg;
+}
+
+
+A.reg = 0x00
+A.sw2 = 3
+
+
+
+
+
+NES CPU
+
+CPU (2A03) [variant of 6502]
+     |
+     |________________ | MEMORY | [2KB, $0000 - %07FF]
+     |
+     |
+     |                  ----------------> OAM (used to store locations of sprites on screen. CPU, which does physics and movement of sprite. These sprite data is written to OAM by DMA, CPU directly writing is too slow)
+     |                  |
+     |________________ | PPU | (2C02) [$2000 - $2007] --> PIXEL
+     |                    |
+     |                    |                    16KB addressable range
+     |                    |____________________ | BUS | ________________________________________>
+     |                          V                              V                       V
+     |                      Graphics                         VRAM                  PALETTES (stored in proprietary format)
+     |                   ($0000-$1FFF, 8KB)             ($2000-$127FF, 2KB)      ($3000-$3FFF)
+     |
+     |
+     |________________ | APU | [ $4000 - $4017 ]
+     |
+     |
+  | BUS | --> 64KB addressable range
+     |
+     |________________ | CARTRIDGE | [$4020 - $FFFF]
+     |               (can contain mapper which extends functionality of NES)
+     |
+     |
+     |
+     |
+     V
+
+
+Feeding both the CPU and PPU is the clock. Everytime the clock ticks, the CPU and PPU
+do something.
+Every clock tick, the PPU outputs a pixel to the screen.
+PPU and CPU run at different clock speeds.
+
+PPU is clocked at 3x the frequency of the CPU.
+
+CPU structures data in such a way that PPU can compose picture that we see on the screen.
+
+
+Mappers
+- Device on a cartridge
+- Responsible for "bank switching", where CPU configures mapper on cartridge to give different data for
+the same address range. Cartridge has multiple memory banks. Bank "A" can contain the graphics for level 1, and when you reach level 2, the
+cartridge is programmed so that all the graphics map into bank "B". Nothing has to be loaded along the bus.
+
+We're simply changing the mapping of the addresses to different memory locations on the cartridge.
+But the PPU and CPU addressing those locations see no difference, but mapper delivers different data.
+
+This allows us to have significantly larger memories devoted to graphics and program data.
+
